@@ -1,7 +1,7 @@
 -- ==========================================================
--- SHADOW ENGINE V1.0 (MOTOR BASE)
+-- ECLIPSE UI LIBRARY V2.5 (MODULE EDITION)
 -- ==========================================================
-local ShadowLib = {}
+local EclipseLib = {}
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -11,8 +11,8 @@ local TweenService = game:GetService("TweenService")
 local lp = Players.LocalPlayer
 
 local SecureParent = CoreGui 
-if SecureParent:FindFirstChild("ShadowHubEngine") then 
-    SecureParent.ShadowHubEngine:Destroy() 
+if SecureParent:FindFirstChild("EclipseHubEngine") then 
+    SecureParent.EclipseHubEngine:Destroy() 
 end
 
 local function Create(class, props, parent)
@@ -48,74 +48,147 @@ local function MakeDraggableSmooth(gui, handle)
     end)
 end
 
-function ShadowLib:CreateWindow(config)
-    local HubName = config.Name or "Shadow Hub"
-    local ThemeColor = config.Color or Color3.fromRGB(0, 150, 255)
+function EclipseLib:CreateWindow(config)
+    local HubName = config.Name or "Eclipse"
+    local ThemeColor = Color3.fromRGB(0, 130, 255) 
+    local BgColor = Color3.fromRGB(12, 12, 14) 
+    local ElementColor = Color3.fromRGB(18, 18, 22) 
     
-    local gui = Create("ScreenGui", {Name = "ShadowHubEngine", DisplayOrder = 9999999, ResetOnSpawn = false, Parent = SecureParent})
+    local gui = Create("ScreenGui", {Name = "EclipseHubEngine", DisplayOrder = 9999999, ResetOnSpawn = false, Parent = SecureParent})
     
+    -- TELA DE CARREGAMENTO (INTRO ANIMADA)
+    local IntroFrame = Create("Frame", {
+        Size = UDim2.new(0, 250, 0, 80), Position = UDim2.new(0.5, -125, 0.5, -40),
+        BackgroundColor3 = BgColor, ClipsDescendants = true, Parent = gui
+    })
+    Create("UICorner", {CornerRadius = UDim.new(0, 8)}, IntroFrame)
+    Create("UIStroke", {Color = ThemeColor, Thickness = 2, Transparency = 1}, IntroFrame)
+    
+    TweenService:Create(IntroFrame.UIStroke, TweenInfo.new(1), {Transparency = 0}):Play()
+    
+    local titleText = string.upper(HubName)
+    local letterLabels = {}
+    local totalWidth = #titleText * 18
+    local startX = (250 - totalWidth) / 2
+
+    for i = 1, #titleText do
+        local char = titleText:sub(i, i)
+        local lbl = Create("TextLabel", {
+            Size = UDim2.new(0, 18, 0, 40), Position = UDim2.new(0, startX + ((i-1)*18), 0.5, -20),
+            Text = char, TextColor3 = ThemeColor, Font = Enum.Font.GothamBlack, TextSize = 22,
+            BackgroundTransparency = 1, TextTransparency = 1, Parent = IntroFrame
+        })
+        table.insert(letterLabels, lbl)
+    end
+
+    for _, lbl in ipairs(letterLabels) do
+        TweenService:Create(lbl, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+        task.wait(0.08)
+    end
+    task.wait(0.6)
+
+    for _, lbl in ipairs(letterLabels) do
+        TweenService:Create(lbl, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            TextTransparency = 1, Position = UDim2.new(0, lbl.Position.X.Offset, 0, -30)
+        }):Play()
+        task.wait(0.05)
+    end
+    task.wait(0.4)
+
+    local introShrink = TweenService:Create(IntroFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)
+    })
+    introShrink:Play()
+    introShrink.Completed:Wait()
+    IntroFrame:Destroy()
+
+    -- CRIANDO O HUB PRINCIPAL
     local ToggleBtn = Create("ImageButton", {
         Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(0, 15, 0.5, -25),
         Image = "rbxthumb://type=AvatarHeadShot&id="..lp.UserId.."&w=150&h=150",
-        BackgroundColor3 = Color3.fromRGB(20, 25, 35), Active = true, ZIndex = 100, Parent = gui
+        BackgroundColor3 = BgColor, Active = true, ZIndex = 100, Parent = gui
     })
     Create("UICorner", {CornerRadius = UDim.new(1, 0)}, ToggleBtn)
     Create("UIStroke", {Color = ThemeColor, Thickness = 2}, ToggleBtn)
     MakeDraggableSmooth(ToggleBtn, ToggleBtn)
 
     local MainFrame = Create("Frame", {
-        Size = UDim2.new(0, 600, 0, 400), Position = UDim2.new(0.5, -300, 0.5, -200),
-        BackgroundColor3 = Color3.fromRGB(15, 20, 30), Active = true, Visible = false, Parent = gui
+        Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0),
+        BackgroundColor3 = BgColor, Active = true, Visible = true, ClipsDescendants = true, Parent = gui
     })
     Create("UICorner", {CornerRadius = UDim.new(0, 8)}, MainFrame)
     Create("UIStroke", {Color = ThemeColor, Thickness = 2}, MainFrame)
     
+    TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 600, 0, 400), Position = UDim2.new(0.5, -300, 0.5, -200)
+    }):Play()
+
+    local isOpen = true
+    ToggleBtn.MouseButton1Click:Connect(function() 
+        isOpen = not isOpen
+        if isOpen then
+            MainFrame.Visible = true
+            TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 600, 0, 400), Position = UDim2.new(0.5, -300, 0.5, -200)}):Play()
+        else
+            local closeAnim = TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)})
+            closeAnim:Play()
+            closeAnim.Completed:Wait()
+            MainFrame.Visible = false
+        end
+    end)
+
     local TopBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Active = true, Parent = MainFrame})
     MakeDraggableSmooth(MainFrame, TopBar)
-    ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
-
-    local Sidebar = Create("Frame", {Size = UDim2.new(0, 160, 1, 0), BackgroundColor3 = Color3.fromRGB(10, 15, 25), Parent = MainFrame})
+    
+    local Sidebar = Create("Frame", {Size = UDim2.new(0, 160, 1, 0), BackgroundColor3 = ElementColor, Parent = MainFrame})
     Create("UICorner", {CornerRadius = UDim.new(0, 8)}, Sidebar)
 
-    local Profile = Create("Frame", {Size = UDim2.new(1, 0, 0, 100), BackgroundTransparency = 1, Parent = Sidebar})
-    local Avatar = Create("ImageLabel", {Size = UDim2.new(0, 45, 0, 45), Position = UDim2.new(0.5, -22.5, 0, 15), Image = "rbxthumb://type=AvatarHeadShot&id="..lp.UserId.."&w=150&h=150", BackgroundColor3 = Color3.fromRGB(30, 30, 40), Parent = Profile})
-    Create("UICorner", {CornerRadius = UDim.new(1, 0)}, Avatar)
-    Create("TextLabel", {Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 0, 65), Text = lp.Name, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, BackgroundTransparency = 1, Parent = Profile})
-    
-    local rig = (lp.Character and lp.Character:FindFirstChild("Humanoid") and lp.Character.Humanoid.RigType.Name) or "R15"
-    Create("TextLabel", {Size = UDim2.new(1, 0, 0, 15), Position = UDim2.new(0, 0, 0, 85), Text = rig .. " | " .. HubName, TextColor3 = Color3.fromRGB(120, 120, 130), TextSize = 10, Font = Enum.Font.Gotham, BackgroundTransparency = 1, Parent = Profile})
-
-    local TabContainer = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 1, -110), Position = UDim2.new(0, 0, 0, 110), BackgroundTransparency = 1, ScrollBarThickness = 0, Parent = Sidebar})
+    local TabContainer = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 1, -110), Position = UDim2.new(0, 0, 0, 40), BackgroundTransparency = 1, ScrollBarThickness = 0, Parent = Sidebar})
     Create("UIListLayout", {Padding = UDim.new(0, 5), HorizontalAlignment = Enum.HorizontalAlignment.Center}, TabContainer)
 
     local PageContainer = Create("Frame", {Size = UDim2.new(1, -170, 1, -20), Position = UDim2.new(0, 165, 0, 10), BackgroundTransparency = 1, Parent = MainFrame})
 
     local Window = {}
+    local firstTab = true
+
     function Window:CreateTab(name)
-        local TabBtn = Create("TextButton", {Size = UDim2.new(0.9, 0, 0, 32), Text = name, BackgroundColor3 = Color3.fromRGB(25, 30, 40), TextColor3 = Color3.fromRGB(200, 200, 200), Font = Enum.Font.GothamSemibold, Parent = TabContainer})
+        local TabBtn = Create("TextButton", {Size = UDim2.new(0.9, 0, 0, 32), Text = name, BackgroundColor3 = BgColor, TextColor3 = Color3.fromRGB(150, 150, 150), Font = Enum.Font.GothamSemibold, Parent = TabContainer})
         Create("UICorner", {CornerRadius = UDim.new(0, 6)}, TabBtn)
         
-        local Page = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, ScrollBarThickness = 2, AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = PageContainer})
+        local Page = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, ScrollBarThickness = 2, ScrollBarImageColor3 = ThemeColor, AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false, Parent = PageContainer})
         Create("UIListLayout", {Padding = UDim.new(0, 8)}, Page)
+
+        if firstTab then 
+            Page.Visible = true; TabBtn.TextColor3 = ThemeColor; firstTab = false
+        end
 
         TabBtn.MouseButton1Click:Connect(function()
             for _, p in pairs(PageContainer:GetChildren()) do if p:IsA("ScrollingFrame") then p.Visible = false end end
-            for _, b in pairs(TabContainer:GetChildren()) do if b:IsA("TextButton") then b.TextColor3 = Color3.fromRGB(200, 200, 200) end end
+            for _, b in pairs(TabContainer:GetChildren()) do if b:IsA("TextButton") then b.TextColor3 = Color3.fromRGB(150, 150, 150) end end
             Page.Visible = true; TabBtn.TextColor3 = ThemeColor
         end)
 
         local Elements = {}
         
+        -- FUNÇÃO DE CRIAR BOTÃO
         function Elements:CreateButton(cfg)
-            local btn = Create("TextButton", {Size = UDim2.new(1, -10, 0, 35), Text = "  " .. cfg.Name, BackgroundColor3 = Color3.fromRGB(25, 30, 40), TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamSemibold, TextXAlignment = Enum.TextXAlignment.Left, Parent = Page})
+            local btn = Create("TextButton", {Size = UDim2.new(1, -10, 0, 38), Text = "  " .. cfg.Name, BackgroundColor3 = ElementColor, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamSemibold, TextXAlignment = Enum.TextXAlignment.Left, Parent = Page})
             Create("UICorner", {CornerRadius = UDim.new(0, 6)}, btn)
-            btn.MouseButton1Click:Connect(function() pcall(cfg.Callback) end)
+            local icn = Create("TextLabel", {Size = UDim2.new(0, 38, 1, 0), Position = UDim2.new(1, -38, 0, 0), Text = "⚡", TextColor3 = ThemeColor, BackgroundTransparency = 1, Parent = btn})
+            
+            btn.MouseButton1Click:Connect(function() 
+                TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = ThemeColor}):Play()
+                task.wait(0.1)
+                TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = ElementColor}):Play()
+                if cfg.Callback then task.spawn(cfg.Callback) end 
+            end)
         end
 
+        -- FUNÇÃO DE CRIAR TOGGLE (ATIVAR/DESATIVAR)
         function Elements:CreateToggle(cfg)
-            local tgl = Create("TextButton", {Size = UDim2.new(1, -10, 0, 35), Text = "  " .. cfg.Name, BackgroundColor3 = Color3.fromRGB(25, 30, 40), TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamSemibold, TextXAlignment = Enum.TextXAlignment.Left, Parent = Page})
+            local tgl = Create("TextButton", {Size = UDim2.new(1, -10, 0, 38), Text = "  " .. cfg.Name, BackgroundColor3 = ElementColor, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamSemibold, TextXAlignment = Enum.TextXAlignment.Left, Parent = Page})
             Create("UICorner", {CornerRadius = UDim.new(0, 6)}, tgl)
-            local box = Create("Frame", {Size = UDim2.new(0, 20, 0, 20), Position = UDim2.new(1, -30, 0.5, -10), BackgroundColor3 = Color3.fromRGB(40, 45, 55), Parent = tgl})
+            local box = Create("Frame", {Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -32, 0.5, -11), BackgroundColor3 = BgColor, Parent = tgl})
             Create("UICorner", {CornerRadius = UDim.new(0, 4)}, box)
             
             local state = cfg.CurrentValue or false
@@ -123,43 +196,9 @@ function ShadowLib:CreateWindow(config)
             
             tgl.MouseButton1Click:Connect(function()
                 state = not state
-                TweenService:Create(box, TweenInfo.new(0.2), {BackgroundColor3 = state and ThemeColor or Color3.fromRGB(40, 45, 55)}):Play()
-                pcall(function() cfg.Callback(state) end)
+                TweenService:Create(box, TweenInfo.new(0.2), {BackgroundColor3 = state and ThemeColor or BgColor}):Play()
+                if cfg.Callback then task.spawn(cfg.Callback, state) end
             end)
-        end
-
-        function Elements:CreateDropdown(cfg)
-            local dropFrame = Create("Frame", {Size = UDim2.new(1, -10, 0, 35), BackgroundColor3 = Color3.fromRGB(25, 30, 40), ClipsDescendants = true, Parent = Page})
-            Create("UICorner", {CornerRadius = UDim.new(0, 6)}, dropFrame)
-            local dropBtn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 35), Text = "  " .. cfg.Name, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamSemibold, TextXAlignment = Enum.TextXAlignment.Left, BackgroundTransparency = 1, Parent = dropFrame})
-            local icon = Create("TextLabel", {Size = UDim2.new(0, 35, 0, 35), Position = UDim2.new(1, -35, 0, 0), Text = "▼", TextColor3 = ThemeColor, BackgroundTransparency = 1, Parent = dropBtn})
-            
-            local listFrame = Create("ScrollingFrame", {Size = UDim2.new(1, -10, 0, 100), Position = UDim2.new(0, 5, 0, 35), BackgroundTransparency = 1, ScrollBarThickness = 2, Parent = dropFrame})
-            local listLayout = Create("UIListLayout", {Padding = UDim.new(0, 3)}, listFrame)
-            
-            local isOpen = false
-            local function Refresh(options)
-                for _, v in pairs(listFrame:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-                for _, opt in pairs(options) do
-                    local optBtn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 25), Text = opt, BackgroundColor3 = Color3.fromRGB(35, 40, 55), TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, Parent = listFrame})
-                    Create("UICorner", {CornerRadius = UDim.new(0, 4)}, optBtn)
-                    optBtn.MouseButton1Click:Connect(function()
-                        dropBtn.Text = "  " .. cfg.Name .. ": " .. opt
-                        pcall(function() cfg.Callback(opt) end)
-                        isOpen = false; TweenService:Create(dropFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, -10, 0, 35)}):Play(); icon.Rotation = 0
-                    end)
-                end
-            end
-            Refresh(cfg.Options)
-
-            dropBtn.MouseButton1Click:Connect(function()
-                isOpen = not isOpen
-                local targetSize = isOpen and UDim2.new(1, -10, 0, 35 + math.clamp(#cfg.Options * 28, 28, 110)) or UDim2.new(1, -10, 0, 35)
-                TweenService:Create(dropFrame, TweenInfo.new(0.2), {Size = targetSize}):Play()
-                TweenService:Create(icon, TweenInfo.new(0.2), {Rotation = isOpen and 180 or 0}):Play()
-            end)
-
-            return {Refresh = Refresh}
         end
 
         return Elements
@@ -167,4 +206,4 @@ function ShadowLib:CreateWindow(config)
     return Window
 end
 
-return ShadowLib
+return EclipseLib
