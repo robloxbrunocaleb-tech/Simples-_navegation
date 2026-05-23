@@ -5,7 +5,6 @@ local TweenService = game:GetService("TweenService")
 local lp = Players.LocalPlayer
 local PlayerGui = lp:WaitForChild("PlayerGui")
 
--- // Função utilitária para criar elementos
 local function Create(class, props, parent)
     local obj = Instance.new(class)
     for i, v in pairs(props) do obj[i] = v end
@@ -13,109 +12,63 @@ local function Create(class, props, parent)
     return obj
 end
 
--- // Função para animações suaves
-local function Tween(obj, props, time)
-    if obj then TweenService:Create(obj, TweenInfo.new(time or 0.25), props):Play() end
-end
-
 local ShadowLib = {}
 
 function ShadowLib:CreateWindow(config)
-    local HubName = config.Name or "Shadow Hub"
-    local ThemeColor = config.Color or Color3.fromRGB(147, 51, 234)
+    if PlayerGui:FindFirstChild("ShadowHubUniversal") then PlayerGui.ShadowHubUniversal:Destroy() end
 
-    -- // Limpeza de instâncias antigas para evitar duplicação
-    if PlayerGui:FindFirstChild("ShadowHubUniversal") then 
-        PlayerGui.ShadowHubUniversal:Destroy() 
-    end
-
-    -- // Criação da GUI dentro do PlayerGui (Compatibilidade Total)
-    local gui = Create("ScreenGui", {
-        Name = "ShadowHubUniversal", 
-        ResetOnSpawn = false, 
-        Parent = PlayerGui, 
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    })
-
-    -- // Frame Principal
-    local MainFrame = Create("Frame", {
-        Size = UDim2.new(0, 600, 0, 400),
-        Position = UDim2.new(0.5, -300, 0.5, -200),
-        BackgroundColor3 = Color3.fromRGB(15, 20, 30),
-        Visible = false,
-        Parent = gui
-    })
+    local gui = Create("ScreenGui", {Name = "ShadowHubUniversal", ResetOnSpawn = false, Parent = PlayerGui})
+    local MainFrame = Create("Frame", {Size = UDim2.new(0, 600, 0, 400), Position = UDim2.new(0.5, -300, 0.5, -200), BackgroundColor3 = Color3.fromRGB(15, 20, 30), Visible = false, Parent = gui})
     Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = MainFrame})
-    Create("UIStroke", {Color = ThemeColor, Thickness = 2, Parent = MainFrame})
+    Create("UIStroke", {Color = config.Color or Color3.fromRGB(147, 51, 234), Thickness = 2, Parent = MainFrame})
 
-    -- // Barra Superior para Arrastar
+    -- Arrastar
     local TopBar = Create("Frame", {Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = MainFrame})
-    
     local dragging, dragStart, startPos
-    TopBar.InputBegan:Connect(function(input) 
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then 
-            dragging = true; dragStart = input.Position; startPos = MainFrame.Position 
-        end 
-    end)
-    UIS.InputChanged:Connect(function(input) 
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then 
-            local delta = input.Position - dragStart
-            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end 
-    end)
-    UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+    TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; dragStart = i.Position; startPos = MainFrame.Position end end)
+    UIS.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then local d = i.Position - dragStart; MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y) end end)
+    UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
 
-    -- // Botão de Toggle (Abre/Fecha)
-    local ToggleBtn = Create("TextButton", {
-        Size = UDim2.new(0, 100, 0, 30), Position = UDim2.new(0, 10, 0, 10),
-        Text = "Open Hub", TextColor3 = Color3.new(1,1,1), BackgroundColor3 = ThemeColor, 
-        Font = Enum.Font.GothamBold, Parent = gui
-    })
-    Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = ToggleBtn})
+    local ToggleBtn = Create("TextButton", {Size = UDim2.new(0, 100, 0, 30), Position = UDim2.new(0, 10, 0, 10), Text = "Open Hub", BackgroundColor3 = config.Color or Color3.fromRGB(147, 51, 234), Parent = gui})
     ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
-    -- // Sidebar de Abas
-    local TabContainer = Create("ScrollingFrame", {
-        Size = UDim2.new(0, 150, 1, -40), Position = UDim2.new(0, 0, 0, 40),
-        BackgroundTransparency = 1, ScrollBarThickness = 2, Parent = MainFrame
-    })
+    local TabContainer = Create("ScrollingFrame", {Size = UDim2.new(0, 150, 1, -40), Position = UDim2.new(0, 0, 0, 40), BackgroundTransparency = 1, Parent = MainFrame})
     Create("UIListLayout", {Padding = UDim.new(0, 5), Parent = TabContainer})
 
-    -- // Container de Páginas
-    local PageContainer = Create("Frame", {
-        Size = UDim2.new(1, -160, 1, -50), Position = UDim2.new(0, 160, 0, 40),
-        BackgroundTransparency = 1, Parent = MainFrame
-    })
+    local PageContainer = Create("Frame", {Size = UDim2.new(1, -160, 1, -50), Position = UDim2.new(0, 160, 0, 40), BackgroundTransparency = 1, Parent = MainFrame})
 
     local Window = {}
     function Window:CreateTab(name)
-        local TabBtn = Create("TextButton", {
-            Size = UDim2.new(1, 0, 0, 30), Text = name, TextColor3 = Color3.new(1,1,1),
-            BackgroundColor3 = Color3.fromRGB(20, 25, 35), Font = Enum.Font.Gotham, Parent = TabContainer
-        })
-        
-        local Page = Create("ScrollingFrame", {
-            Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, 
-            Visible = false, Parent = PageContainer
-        })
+        local TabBtn = Create("TextButton", {Size = UDim2.new(1, 0, 0, 30), Text = name, BackgroundColor3 = Color3.fromRGB(20, 25, 35), Parent = TabContainer})
+        local Page = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, Parent = PageContainer})
         Create("UIListLayout", {Padding = UDim.new(0, 5), Parent = Page})
-
-        TabBtn.MouseButton1Click:Connect(function()
-            for _, v in pairs(PageContainer:GetChildren()) do v.Visible = false end
-            Page.Visible = true
-        end)
+        TabBtn.MouseButton1Click:Connect(function() for _,v in pairs(PageContainer:GetChildren()) do v.Visible = false end; Page.Visible = true end)
 
         local Elements = {}
         function Elements:CreateButton(cfg)
-            local b = Create("TextButton", {
-                Size = UDim2.new(1, -10, 0, 30), Text = cfg.Name, TextColor3 = Color3.new(1,1,1),
-                BackgroundColor3 = Color3.fromRGB(30, 35, 45), Font = Enum.Font.Gotham, Parent = Page
-            })
+            local b = Create("TextButton", {Size = UDim2.new(1, -10, 0, 30), Text = cfg.Name, BackgroundColor3 = Color3.fromRGB(30, 35, 45), Parent = Page})
             b.MouseButton1Click:Connect(cfg.Callback)
+        end
+
+        function Elements:CreateDropdown(cfg)
+            local DropFrame = Create("Frame", {Size = UDim2.new(1, -10, 0, 150), BackgroundColor3 = Color3.fromRGB(30, 35, 45), Visible = false, Parent = Page})
+            local DropList = Create("ScrollingFrame", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Parent = DropFrame})
+            Create("UIListLayout", {Parent = DropList})
+            local Trigger = Create("TextButton", {Size = UDim2.new(1, -10, 0, 30), Text = cfg.Name .. " (Clique)", BackgroundColor3 = Color3.fromRGB(40, 45, 55), Parent = Page})
+            Trigger.MouseButton1Click:Connect(function() DropFrame.Visible = not DropFrame.Visible end)
+            
+            local function Refresh(opts)
+                for _,v in pairs(DropList:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+                for _,opt in pairs(opts) do
+                    local b = Create("TextButton", {Size = UDim2.new(1, 0, 0, 30), Text = opt, BackgroundColor3 = Color3.fromRGB(50, 55, 65), Parent = DropList})
+                    b.MouseButton1Click:Connect(function() cfg.Callback(opt); DropFrame.Visible = false end)
+                end
+            end
+            Refresh(cfg.Options)
+            return {Refresh = Refresh}
         end
         return Elements
     end
     return Window
 end
-
 return ShadowLib
